@@ -2,12 +2,15 @@ import {
   ChangeDetectionStrategy,
   Component,
   inject,
-  signal,
+  linkedSignal,
 } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+
 import { SearchInputComponent } from '../../components/search-input/search-input.component';
 import { CountryListComponent } from '../../components/country-list/country-list.component';
 import { CountryService } from '../../services/country.service';
-import { Country } from '../../interfaces/country.interface';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-by-capital-page',
@@ -17,26 +20,34 @@ import { Country } from '../../interfaces/country.interface';
 })
 export class ByCapitalPageComponent {
   countryService = inject(CountryService);
-  isLoading = signal(false);
-  isError = signal<string | null>(null);
-  countries = signal<Country[]>([]);
+  activatedRoute = inject(ActivatedRoute);
+  router = inject(Router);
 
-  onSearch(query: string) {
-    if (this.isLoading()) return;
+  queryParam = this.activatedRoute.snapshot.queryParamMap.get('query') ?? '';
+  query = linkedSignal(() => this.queryParam);
 
-    this.isLoading.set(true);
-    this.isError.set(null);
+  countryResource = rxResource({
+    request: () => ({ query: this.query() }),
+    loader: ({ request }) => {
+      if (!request.query) return of([]);
 
-    this.countryService.searchByCapital(query).subscribe({
-      next: (countries) => {
-        this.countries.set(countries);
-        this.isLoading.set(false);
-      },
-      error: (error) => {
-        this.isLoading.set(false);
-        this.countries.set([]);
-        this.isError.set(error);
-      },
-    });
-  }
+      this.router.navigate(['country/by-capital'], {
+        queryParams: { query: request.query },
+      });
+
+      return this.countryService.searchByCapital(request.query);
+    },
+  });
+
+  // Con promesas
+  // countryResource = resource({
+  //   request: () => ({ query: this.query() }),
+  //   loader: async ({ request }) => {
+  //     if (!request.query) return [];
+
+  //     return await firstValueFrom(
+  //       this.countryService.searchByCapital(request.query)
+  //     );
+  //   },
+  // });
 }

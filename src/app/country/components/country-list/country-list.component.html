@@ -23,10 +23,29 @@
         <td>{{ country.capital }}</td>
         <td>
           <span class="badge badge-secondary">
-            {{ 1123456789.123456 | number : "0.0-0" : "es" }}
+            {{ country.population | number : "0.0-0" : "es" }}
           </span>
         </td>
-        <td><a class="link-primary cursor-pointer">Más información</a></td>
+        <td>
+          <a
+            [routerLink]="['/country/by', country.cca2]"
+            routerLinkActive="router-link-active"
+            class="link-primary cursor-pointer"
+            >Más información</a
+          >
+        </td>
+      </tr>
+      } @if (errorMessage()) {
+      <tr>
+        <td colspan="8" class="text-center">{{ errorMessage() }}</td>
+      </tr>
+      } @if(countries().length === 0 && !isLoading()) {
+      <tr>
+        <td colspan="8" class="text-center">No hay resultados</td>
+      </tr>
+      } @if (isLoading()) {
+      <tr>
+        <td colspan="8" class="text-center">Buscando países</td>
       </tr>
       }
     </tbody>

@@ -1,8 +1,11 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  effect,
   input,
+  linkedSignal,
   output,
+  signal,
 } from '@angular/core';
 
 @Component({
@@ -12,10 +15,21 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SearchInputComponent {
-  placeholder = input.required<string>();
+  placeholder = input<string>('Buscar');
+  debounceTime = input<number>(1000);
+  initialValue = input<string>();
+
   value = output<string>();
 
-  onSearch(value: string) {
-    this.value.emit(value);
-  }
+  inputValue = linkedSignal<string>(() => this.initialValue() ?? '');
+
+  debounceEffect = effect((onCleanUp) => {
+    const value = this.inputValue();
+    const timeout = setTimeout(() => {
+      this.value.emit(value);
+    }, this.debounceTime());
+    onCleanUp(() => {
+      clearTimeout(timeout);
+    });
+  });
 }
